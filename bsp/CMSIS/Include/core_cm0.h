@@ -79,7 +79,12 @@
   #define __ASM            __asm                                      /*!< asm keyword for GNU Compiler          */
   #define __INLINE         inline                                     /*!< inline keyword for GNU Compiler       */
   #define __STATIC_INLINE  static inline
-
+  #ifndef   __STATIC_FORCEINLINE
+    #define __STATIC_FORCEINLINE  __attribute__((always_inline)) static inline
+  #endif
+  #ifndef   __WEAK
+  #define __WEAK                                 __attribute__((weak))
+  #endif
 #elif defined ( __TASKING__ )
   #define __ASM            __asm                                      /*!< asm keyword for TASKING Compiler      */
   #define __INLINE         inline                                     /*!< inline keyword for TASKING Compiler   */
