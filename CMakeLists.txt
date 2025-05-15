@@ -17,6 +17,20 @@ set(CMAKE_C_EXTENSIONS ON)
 include(cmake/nuc120bsp.cmake)
 include(cmake/daplink.cmake)
 
+set(SRC_FILES
+    main.c
+    startup_NUC100Series.S
+)
+
+add_executable(${EXECUTABLE} ${SRC_FILES})
+
+target_include_directories(${EXECUTABLE} PRIVATE
+  ${CMAKE_SOURCE_DIR}
+  nuc120bsp
+  daplink
+)
+
+
 target_link_libraries(${EXECUTABLE}
 	nuc120bsp
 	daplink

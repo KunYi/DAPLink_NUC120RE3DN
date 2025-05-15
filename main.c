@@ -6,9 +6,9 @@
 // 48MHz for USB
 #define PLL_CLOCK	(48000000U)
 
-uint32_t main(void);
+int main(void);
 
-static __INLINE SYS_Init(void)
+static __INLINE void SYS_Init(void)
 {
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init System Clock                                                                                       */
@@ -55,7 +55,7 @@ static __INLINE SYS_Init(void)
     // EnableCLKO((2 << CLK_CLKSEL2_FRQDIV_S_Pos), 2);
 }
 
-static __INLINE UART0_Init(void)
+static __INLINE void UART0_Init(void)
 {
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init UART                                                                                               */
@@ -72,7 +72,7 @@ static __INLINE UART0_Init(void)
     UART0->IER = UART_IER_TOUT_IEN_Msk | UART_IER_RDA_IEN_Msk;
 }
 
-static __INLINE app_main(void) {
+static __INLINE void app_main(void) {
 	DAP_Setup();
 
 	while (1) {
@@ -80,7 +80,7 @@ static __INLINE app_main(void) {
 	}
 }
 
-uint32_t main(void) {
+int main(void) {
     /* Unlock protected registers */
     SYS_UnlockReg();
     SYS_Init();
