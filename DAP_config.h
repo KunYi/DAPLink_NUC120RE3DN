@@ -115,7 +115,7 @@ This information includes:
 #define SWO_STREAM              0               ///< SWO Streaming Trace: 1 = available, 0 = not available.
 
 /// Clock frequency of the Test Domain Timer. Timer value is returned with \ref TIMESTAMP_GET.
-#define TIMESTAMP_CLOCK         100000000U      ///< Timestamp clock in Hz (0 = timestamps not supported).
+#define TIMESTAMP_CLOCK         0U              ///< Timestamp clock in Hz (0 = timestamps not supported).
 
 /// Indicate that UART Communication Port is available.
 /// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
@@ -317,9 +317,9 @@ __STATIC_INLINE void PORT_SWD_SETUP(void)
     SWD_DAT_IO = 1;
     SWD_CLK_IO = 1;
     DBG_RST_IO = 1;
-    GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_MODE_OUTPUT);
-    GPIO_SetMode(SWD_CLK_GRP, (1 << SWD_CLK_BIT), GPIO_MODE_OUTPUT);
-    GPIO_SetMode(DBG_RST_GRP, (1 << DBG_RST_BIT), GPIO_MODE_OUTPUT);
+    GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_PMD_OUTPUT);
+    GPIO_SetMode(SWD_CLK_GRP, (1 << SWD_CLK_BIT), GPIO_PMD_OUTPUT);
+    GPIO_SetMode(DBG_RST_GRP, (1 << DBG_RST_BIT), GPIO_PMD_OUTPUT);
 }
 
 /** Disable JTAG/SWD I/O Pins.
@@ -327,9 +327,9 @@ Disables the DAP Hardware I/O pins which configures:
  - TCK/SWCLK, TMS/SWDIO, TDI, TDO, nTRST, nRESET to High-Z mode.
 */
 __STATIC_INLINE void PORT_OFF (void) {
-  GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_MODE_INPUT);
-  GPIO_SetMode(SWD_CLK_GRP, (1 << SWD_CLK_BIT), GPIO_MODE_INPUT);
-  GPIO_SetMode(DBG_RST_GRP, (1 << DBG_RST_BIT), GPIO_MODE_INPUT);
+  GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_PMD_INPUT);
+  GPIO_SetMode(SWD_CLK_GRP, (1 << SWD_CLK_BIT), GPIO_PMD_INPUT);
+  GPIO_SetMode(DBG_RST_GRP, (1 << DBG_RST_BIT), GPIO_PMD_INPUT);
 }
 
 
@@ -399,7 +399,7 @@ Configure the SWDIO DAP hardware I/O pin to output mode. This function is
 called prior \ref PIN_SWDIO_OUT function calls.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_OUT_ENABLE  (void) {
-  GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_MODE_OUTPUT);
+  GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_PMD_OUTPUT);
 }
 
 /** SWDIO I/O pin: Switch to Input mode (used in SWD mode only).
@@ -407,7 +407,7 @@ Configure the SWDIO DAP hardware I/O pin to input mode. This function is
 called prior \ref PIN_SWDIO_IN function calls.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_OUT_DISABLE (void) {
-  GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_MODE_INPUT);
+  GPIO_SetMode(SWD_DAT_GRP, (1 << SWD_DAT_BIT), GPIO_PMD_INPUT);
 }
 
 
@@ -530,7 +530,8 @@ default, the DWT timer is used.  The frequency of this timer is configured with 
 */
 __STATIC_INLINE uint32_t TIMESTAMP_GET (void) {
   // return (DWT->CYCCNT);
-  return (DWT->CYCCNT) / (CPU_CLOCK / TIMESTAMP_CLOCK);
+  //return (DWT->CYCCNT) / (CPU_CLOCK / TIMESTAMP_CLOCK);
+  return 0; // TODO: need implement a timer
 }
 
 ///@}
@@ -554,9 +555,9 @@ Status LEDs. In detail the operation of Hardware I/O and LED pins are enabled an
  - LED output pins are enabled and LEDs are turned off.
 */
 __STATIC_INLINE void DAP_SETUP (void) {
-  GPIO_SetMode(LED_ICE_GRP, (1 << LED_ICE_BIT), GPIO_MODE_OUTPUT);
-  GPIO_SetMode(LED_ISP_GRP, (1 << LED_ISP_BIT), GPIO_MODE_OUTPUT);
-  GPIO_SetMode(LED_GRE_GRP, (1 << LED_GRE_BIT), GPIO_MODE_OUTPUT);
+  GPIO_SetMode(LED_ICE_GRP, (1 << LED_ICE_BIT), GPIO_PMD_OUTPUT);
+  GPIO_SetMode(LED_ISP_GRP, (1 << LED_ISP_BIT), GPIO_PMD_OUTPUT);
+  GPIO_SetMode(LED_GRE_GRP, (1 << LED_GRE_BIT), GPIO_PMD_OUTPUT);
   LED_ICE_IO = 0;
   LED_ISP_IO = 1;
   LED_GRE_IO = 1;
