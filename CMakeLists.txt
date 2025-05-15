@@ -15,7 +15,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
 include(cmake/nuc120bsp.cmake)
+include(cmake/daplink.cmake)
 
 target_link_libraries(${EXECUTABLE}
 	nuc120bsp
+	daplink
 )
