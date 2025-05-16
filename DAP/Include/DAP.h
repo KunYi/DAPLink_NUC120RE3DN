@@ -228,8 +228,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "core_cm0.h"
-//#include "cmsis_compiler.h"
+#include "cmsis_compiler.h"
 
 // DAP Data structure
 typedef struct {
