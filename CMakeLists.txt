@@ -17,13 +17,19 @@ set(CMAKE_C_EXTENSIONS ON)
 
 include(cmake/nuc120bsp.cmake)
 include(cmake/daplink.cmake)
-
+include(cmake/tinyusb.cmake)
+set(THREADX_ARCH cortex_m0)
+set(THREADX_TOOLCHAIN gnu)
+add_subdirectory(threadx)
 set(SRC_FILES
     main.c
     startup_NUC100Series.S
+    tx_initialize_low_level.S
 )
 
 add_executable(${EXECUTABLE} ${SRC_FILES})
+
+target_compile_options(${EXECUTABLE} PRIVATE -DCFG_TUSB_MCU=OPT_MCU_NUC120)
 
 target_include_directories(${EXECUTABLE} PRIVATE
   ${CMAKE_SOURCE_DIR}
@@ -35,6 +41,8 @@ target_include_directories(${EXECUTABLE} PRIVATE
 target_link_libraries(${EXECUTABLE}
 	nuc120bsp
 	daplink
+  tinyusb
+  threadx
 )
 
 target_link_options(${EXECUTABLE} PRIVATE
