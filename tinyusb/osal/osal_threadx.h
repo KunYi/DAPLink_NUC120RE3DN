@@ -71,7 +71,7 @@ TU_ATTR_ALWAYS_INLINE static inline bool osal_mutex_delete(osal_mutex_t mutex_hd
 }
 
 TU_ATTR_ALWAYS_INLINE static inline bool osal_mutex_lock(osal_mutex_t mutex_hdl, uint32_t msec) {
-  return (TX_SUCCESS == tx_mutex_get(mutex_hdl,_osal_ms2tick(msec)));
+  return (TX_SUCCESS == tx_mutex_get(mutex_hdl, _osal_ms2tick(msec)));
 }
 
 TU_ATTR_ALWAYS_INLINE static inline bool osal_mutex_unlock(osal_mutex_t mutex_hdl) {
@@ -81,10 +81,52 @@ TU_ATTR_ALWAYS_INLINE static inline bool osal_mutex_unlock(osal_mutex_t mutex_hd
 //--------------------------------------------------------------------+
 // QUEUE API
 //--------------------------------------------------------------------+
+typedef struct
+{
+  uint16_t depth;
+  uint16_t item_sz;
+  void*    buf;
+  char 	   *name;
+  struct TX_QUEUE_STRUCT tq;
+} osal_queue_def_t;
+typedef struct TX_QUEUE_STRUCT* osal_queue_t;
 
+#define _OSAL_Q_NAME(_name) .name = #_name
+#define ITEM_SIZE_UL(_type)  ((sizeof(_type) + sizeof(ULONG) - 1) / sizeof(ULONG))
+
+#define OSAL_QUEUE_DEF(_int_set, _name, _depth, _type) \
+  static _type _name##_##buf[_depth];\
+  osal_queue_def_t _name = \
+  	{ .depth = _depth, \
+	  .item_sz = ITEM_SIZE_UL(_type), \
+	  .buf = _name##_##buf, \
+	  _OSAL_Q_NAME(_name) \
+        }
 
 TU_ATTR_ALWAYS_INLINE static inline osal_queue_t osal_queue_create(osal_queue_def_t* qdef) {
-  return (TX_SUCCESS == tx_queue_create(qdef, "tusb", ))
+
+  return (TX_SUCCESS == tx_queue_create(&qdef->tq,
+		qdef->name,
+		qdef->item_sz,
+		qdef->buf,
+		qdef->depth * qdef->item_sz)) ?
+		&qdef->tq : NULL;
+}
+
+TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_delete(osal_queue_t qhdl) {
+  return (TX_SUCCESS == tx_queue_delete(qhdl));
+}
+
+TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_receive(osal_queue_t qhdl, void* data, uint32_t msec) {
+  return (TX_SUCCESS == tx_queue_receive(qhdl, data, _osal_ms2tick(msec)));
+}
+
+TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_send(osal_queue_t qhdl, void const* data, bool in_isr) {
+  return (TX_SUCCESS == tx_queue_send(qhdl, (void *)data,  in_isr ? TX_NO_WAIT : TX_WAIT_FOREVER));
+}
+
+TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_empty(osal_queue_t qhdl) {
+  return (TX_SUCCESS == tx_queue_flush(qhdl));
 }
 
 #ifdef __cplusplus

@@ -29,7 +29,10 @@ set(SRC_FILES
 
 add_executable(${EXECUTABLE} ${SRC_FILES})
 
-target_compile_options(${EXECUTABLE} PRIVATE -DCFG_TUSB_MCU=OPT_MCU_NUC120)
+target_compile_options(${EXECUTABLE} PRIVATE
+  -DCFG_TUSB_MCU=OPT_MCU_NUC120
+  -DCFG_TUSB_OS=OPT_OS_THREADX
+)
 
 target_include_directories(${EXECUTABLE} PRIVATE
   ${CMAKE_SOURCE_DIR}
