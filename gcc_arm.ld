@@ -169,10 +169,12 @@ SECTIONS
 
 	.heap (COPY):
 	{
+		. = ALIGN(4);
 		__HeapBase = .;
 		__end__ = .;
 		end = __end__;
 		KEEP(*(.heap*))
+		. = ALIGN(4);
 		__HeapLimit = .;
 	} > RAM
 
@@ -181,7 +183,10 @@ SECTIONS
 	 * values to stack symbols later */
 	.stack_dummy (COPY):
 	{
+		. = ALIGN(4);
 		KEEP(*(.stack*))
+		. = ALIGN(4);
+		__RAM_segment_used_end__ = .;
 	} > RAM
 
 	/* Set stack top to end of RAM, and stack limit move down by

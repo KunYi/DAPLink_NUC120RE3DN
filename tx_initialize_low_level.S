@@ -36,7 +36,7 @@
     .global  _tx_thread_context_save
     .global  _tx_thread_context_restore
     .global  _tx_timer_interrupt
-    .global  _vectors
+    .global  __Vectors
 @
 @
 SYSTEM_CLOCK      =   48000000
@@ -120,13 +120,13 @@ _tx_initialize_low_level:
     LDR     r0, =0xE000E000                         @ Build address of NVIC registers
     LDR     r2, =0xD08                              @ Offset to vector base register
     ADD     r0, r0, r2                              @ Build vector base register
-    LDR     r1, =_vectors                           @ Pickup address of vector table
+    LDR     r1, =__Vectors                          @ Pickup address of vector table
     STR     r1, [r0]                                @ Set vector table address
 @
 @    /* Set system stack pointer from vector value.  */
 @
     LDR     r0, =_tx_thread_system_stack_ptr        @ Build address of system stack pointer
-    LDR     r1, =_vectors                           @ Pickup address of vector table
+    LDR     r1, =__Vectors                          @ Pickup address of vector table
     LDR     r1, [r1]                                @ Pickup reset stack pointer
     STR     r1, [r0]                                @ Save system stack pointer
 @

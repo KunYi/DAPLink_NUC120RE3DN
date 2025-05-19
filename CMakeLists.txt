@@ -49,6 +49,7 @@ target_link_libraries(${EXECUTABLE}
 )
 
 target_link_options(${EXECUTABLE} PRIVATE
+    -T ${LINKER_FILE}
     "-Wl,-Map=${PROJECT_NAME}.map,--cref"
     -Xlinker -print-memory-usage -Xlinker
 )
