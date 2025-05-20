@@ -1,0 +1,13 @@
+#ifndef __BOARD_CONFIG_H__
+#define __BOARD_CONFIG_H__
+
+#define PROTO_DAP_V1 		1
+#define PROTO_DAP_V2		2
+#define PROTO_OPENOCD_CUSTOM	3
+
+#define BOARD_DEBUG_PROTOCOL 	PROTO_DAP_V2
+
+#define USB_VENDOR_STRING	"UWings"
+#define USB_PRODUCT_STRING	"CMSIS-DAP"
+
+#endif

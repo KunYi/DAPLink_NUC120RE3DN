@@ -2,14 +2,22 @@
 #include <stdint.h>
 #include "NUC100Series.h"
 #include "get_serial.h"
+#include "DAP_config.h"
 #include "DAP.h"
+#include "IO_Config.h"
 #include "tx_api.h"
+#include "tusb.h"
 
 // 48MHz for USB
 #define PLLCON_SETTING  CLK_PLLCON_48MHz_HXT
 #define PLL_CLOCK	(48000000U)
 
 int main(void);
+
+TX_THREAD   threadUSB;
+static uint8_t memory_area[4 * 1024];
+static uint8_t TxDataBuffer[CFG_TUD_HID_EP_BUFSIZE];
+static uint8_t RxDataBuffer[CFG_TUD_HID_EP_BUFSIZE];
 
 static __INLINE void SYS_Init(void)
 {
@@ -98,10 +106,35 @@ static __INLINE void UART0_Init(void)
     UART0->IER = UART_IER_TOUT_IEN_Msk | UART_IER_RDA_IEN_Msk;
 }
 
+void usb_thread(ULONG thread_input)
+{
+    (void)thread_input;
+    do {
+        tud_task();
+        if (tud_ready())
+            LED_CONNECTED_OUT(1);
+        else
+            LED_CONNECTED_OUT(0);
+
+        // If suspended or disconnected, delay for 1ms (20 ticks)
+        if (tud_suspended() || !tud_connected() || !tud_task_event_ready())
+            tx_thread_sleep(1);
+    } while (1);
+}
+
 /* Define what the initial system looks like.  */
 void    tx_application_define(void *first_unused_memory)
 {
+    TX_BYTE_POOL    byte_pool;
+    CHAR    *pointer = TX_NULL;
     DAP_Setup();
+
+    tx_byte_pool_create(&byte_pool, "byte pool", memory_area, 4 * 1024);
+    tx_byte_allocate(&byte_pool, (VOID **) &pointer, 1024, TX_NO_WAIT);
+    tx_thread_create(&threadUSB, "ThreadUSB", usb_thread, 0,
+        pointer, 1024,
+        1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+
     while (1) {
 	}
 }
@@ -112,9 +145,37 @@ int main(void) {
     SYS_Init();
     UART0_Init();
     usb_serial_init();
+    tusb_init();
+
     tx_kernel_enter();
 
     return 0;
+}
+
+uint16_t tud_hid_get_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen)
+{
+  // TODO: not Implemented
+  (void) itf;
+  (void) report_id;
+  (void) report_type;
+  (void) buffer;
+  (void) reqlen;
+
+  return 0;
+}
+
+void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t report_type, uint8_t const* RxDataBuffer, uint16_t bufsize)
+{
+  uint32_t response_size = TU_MIN(CFG_TUD_HID_EP_BUFSIZE, bufsize);
+
+  // This doesn't use multiple report and report ID
+  (void) itf;
+  (void) report_id;
+  (void) report_type;
+
+  DAP_ProcessCommand(RxDataBuffer, TxDataBuffer);
+
+  tud_hid_report(0, TxDataBuffer, response_size);
 }
 
 __WEAK

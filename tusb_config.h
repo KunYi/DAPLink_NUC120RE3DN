@@ -76,10 +76,10 @@
  * throughput on USB, so a large runway is needed.
  */
 #define CFG_TUD_CDC_RX_BUFSIZE 64
-#define CFG_TUD_CDC_TX_BUFSIZE 4096
+#define CFG_TUD_CDC_TX_BUFSIZE 1024
 
-#define CFG_TUD_VENDOR_RX_BUFSIZE 8192
-#define CFG_TUD_VENDOR_TX_BUFSIZE 8192
+#define CFG_TUD_VENDOR_RX_BUFSIZE 1024
+#define CFG_TUD_VENDOR_TX_BUFSIZE 1024
 
 #ifdef __cplusplus
  }
