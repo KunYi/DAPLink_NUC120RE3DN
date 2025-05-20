@@ -163,7 +163,7 @@ def generate_c_code(config: Dict, max_endpoints: int, endpoint_assignments: List
 """
     ]
 
-    # 生成接口描述符
+    # 生成接口描述符（保持不變）
     for iface in interfaces:
         if iface["class"] == "cdc":
             comm = iface["communication"]
@@ -272,8 +272,21 @@ const uint8_t usbd_device_descriptor[] = {{
 const uint8_t usbd_config_descriptor[] = {{
 {''.join(config_desc)}
 }};
+"""
 
-// Microsoft OS Descriptors
+    # 生成 Microsoft OS 描述符（根據 ms_os.version）
+    for iface in interfaces:
+        if iface["class"] == "custom" and "ms_os" in iface:
+            ms_os = iface["ms_os"]
+            version = ms_os.get("version", "1.0")  # 默認為 MS OS 1.0
+            compatible_id = ms_os.get("compatible_id", "WINUSB")
+            sub_compatible_id = ms_os.get("sub_compatible_id", "")
+            guid = ms_os["guid"].strip("{}").replace("-", "")
+
+            if version == "1.0":
+                # MS OS 1.0 描述符
+                output += f"""
+// Microsoft OS 1.0 Descriptors
 const uint8_t usbd_msos_descriptor[] = {{
     0x12,       // bLength: Size of descriptor (18 bytes)
     0x03,       // bDescriptorType: String
@@ -290,36 +303,86 @@ const uint8_t usbd_msos_feature_descriptor[] = {{
     0x01,       // bCount: Number of function sections (1)
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Reserved
     // Function Section for CMSIS-DAP v2
-    0x02,       // bFirstInterfaceNumber: CMSIS-DAP v2 interface (2)
+    0x{iface['interface_number']:02X},       // bFirstInterfaceNumber: CMSIS-DAP v2 interface ({iface['interface_number']})
     0x01,       // Reserved
-    'W', 'I', 'N', 'U', 'S', 'B', 0, 0, // CompatibleID: WinUSB
-    0, 0, 0, 0, 0, 0, 0, 0, // SubCompatibleID: None
+    // CompatibleID: {compatible_id}
+    '{compatible_id[0]}', '{compatible_id[1]}', '{compatible_id[2]}', '{compatible_id[3]}',
+    '{compatible_id[4]}', '{compatible_id[5]}', 0x00, 0x00,
+    // SubCompatibleID: {sub_compatible_id or 'None'}
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // GUID: {{{ms_os['guid']}}}
 """
+                # 生成 MS OS 1.0 GUID（16 字節二進制，分組顯示）
+                guid_bytes = []
+                # Data1 (4 字節，CDB3B5AD，小端序)
+                val = int(guid[0:8], 16)
+                data1 = [val & 0xFF, (val >> 8) & 0xFF, (val >> 16) & 0xFF, (val >> 24) & 0xFF]
+                output += "    " + ", ".join(f"0x{b:02X}" for b in data1) + ",\n"
+                # Data2 (2 字節，293B，小端序)
+                val = int(guid[8:12], 16)
+                data2 = [val & 0xFF, (val >> 8) & 0xFF]
+                output += "    " + ", ".join(f"0x{b:02X}" for b in data2) + ",\n"
+                # Data3 (2 字節，4663，小端序)
+                val = int(guid[12:16], 16)
+                data3 = [val & 0xFF, (val >> 8) & 0xFF]
+                output += "    " + ", ".join(f"0x{b:02X}" for b in data3) + ",\n"
+                # Data4[0..1] (2 字節，AA36，大端序)
+                val = int(guid[16:20], 16)
+                data4_0_1 = [(val >> 8) & 0xFF, val & 0xFF]
+                output += "    " + ", ".join(f"0x{b:02X}" for b in data4_0_1) + ",\n"
+                # Data4[2..7] (6 字節，1AAE46463776，大端序)
+                data4_2_7 = []
+                for i in range(20, 32, 2):
+                    val = int(guid[i:i+2], 16)
+                    data4_2_7.append(val)
+                output += "    " + ", ".join(f"0x{b:02X}" for b in data4_2_7) + f",\n"
+                output += "};\n\n"
 
-    # 處理 Microsoft OS GUID
-    for iface in interfaces:
-        if iface["class"] == "custom" and "ms_os" in iface:
-            guid = iface["ms_os"]["guid"].strip("{}").replace("-", "")
-            guid_bytes = []
-            # Data1 (4 字節，CDB3B5AD，小端序)
-            val = int(guid[0:8], 16)
-            guid_bytes.extend([val & 0xFF, (val >> 8) & 0xFF, (val >> 16) & 0xFF, (val >> 24) & 0xFF])
-            # Data2 (2 字節，293B，小端序)
-            val = int(guid[8:12], 16)
-            guid_bytes.extend([val & 0xFF, (val >> 8) & 0xFF])
-            # Data3 (2 字節，4663，小端序)
-            val = int(guid[12:16], 16)
-            guid_bytes.extend([val & 0xFF, (val >> 8) & 0xFF])
-            # Data4[0..1] (2 字節，AA36，大端序)
-            val = int(guid[16:20], 16)
-            guid_bytes.extend([(val >> 8) & 0xFF, val & 0xFF])
-            # Data4[2..7] (6 字節，1AAE46463776，大端序)
-            for i in range(20, 32, 2):
-                val = int(guid[i:i+2], 16)
-                guid_bytes.append(val)
-            output += "    " + ", ".join(f"0x{b:02X}" for b in guid_bytes) + f", // GUID: {{{iface['ms_os']['guid']}}}\n"
+            elif version == "2.0":
+                # MS OS 2.0 描述符（保持不變）
+                output += f"""
+// Microsoft OS 2.0 Descriptor Set
+const uint8_t MS_OS_20_DescriptorSet[] = {{
+    // Microsoft OS 2.0 Set Header Descriptor
+    0x0A, 0x00, // wLength: Size of descriptor (10 bytes)
+    0x00, 0x00, // wDescriptorType: MS_OS_20_SET_HEADER_DESCRIPTOR (0x00)
+    0x00, 0x00, 0x03, 0x06, // dwWindowsVersion: 0x06030000 (Windows 8.1)
+    0xA6, 0x00, // wTotalLength: Total length of descriptor set (166 bytes)
+
+    // Microsoft OS 2.0 Function Subset Header
+    0x08, 0x00, // wLength: Size of descriptor (8 bytes)
+    0x02, 0x00, // wDescriptorType: MS_OS_20_SUBSET_HEADER_FUNCTION (0x02)
+    0x{iface['interface_number']:02X},       // bFirstInterface: CMSIS-DAP v2 interface ({iface['interface_number']})
+    0x00,       // bReserved: Reserved (0x00)
+    0x94, 0x00, // wSubsetLength: Length of function subset (148 bytes)
+
+    // Microsoft OS 2.0 Compatible ID Descriptor
+    0x14, 0x00, // wLength: Size of descriptor (20 bytes)
+    0x03, 0x00, // wDescriptorType: MS_OS_20_FEATURE_COMPATIBLE_ID (0x03)
+    // CompatibleID: {compatible_id}
+    '{compatible_id[0]}', '{compatible_id[1]}', '{compatible_id[2]}', '{compatible_id[3]}', '{compatible_id[4]}', '{compatible_id[5]}', 0x00, 0x00,
+    // SubCompatibleID: {sub_compatible_id or 'None'}
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+
+    // Microsoft OS 2.0 Registry Property Descriptor
+    0x80, 0x00, // wLength: Size of descriptor (128 bytes)
+    0x04, 0x00, // wDescriptorType: MS_OS_20_FEATURE_REG_PROPERTY (0x04)
+    0x01, 0x00, // wPropertyDataType: Unicode REG_SZ (0x0001)
+    0x28, 0x00, // wPropertyNameLength: Length of PropertyName (40 bytes)
+    // PropertyName: "DeviceInterfaceGUID"
+    'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00,
+    'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00,
+    'G', 0x00, 'U', 0x00, 'I', 0x00, 'D', 0x00, 0x00, 0x00,
+    0x4E, 0x00, // wPropertyDataLength: Length of PropertyData (78 bytes)
+    // PropertyData: "{{{ms_os['guid']}}}"
+"""
+                guid_str = ms_os["guid"].strip("{}")
+                output += '    '
+                for char in guid_str:
+                    output += f"'{char}', 0x00, "
+                output += "0x00, 0x00\n"
+                output += "};\n\n"
             break
-    output += "};\n\n"
 
     # 生成字符串描述符
     output += f"""// String Descriptors

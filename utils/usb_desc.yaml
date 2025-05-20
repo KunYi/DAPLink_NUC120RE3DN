@@ -78,6 +78,7 @@ configuration:
           interval: 0
           buffer_size: 64
       ms_os:
+        version: "1.0"
         compatible_id: "WINUSB"
         sub_compatible_id: ""
         guid: "{CDB3B5AD-293B-4663-AA36-1AAE46463776}"
