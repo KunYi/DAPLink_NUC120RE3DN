@@ -1,0 +1,85 @@
+device:
+  usb_version: "2.0"
+  speed: "full"
+  vid: 0x0416
+  pid: 0x5015
+  bcd_device: "1.00"
+  class: 0x00
+  subclass: 0x00
+  protocol: 0x00
+  max_packet_size0: 8
+  manufacturer: "Nuvoton"
+  product: "NUC120 CMSIS-DAP"
+  serial: "NUC120_001"
+  max_power: 100
+  endpoints:
+    max_count: 5
+    buffer_size: 256
+configuration:
+  id: 1
+  attributes: "bus_powered"
+  interfaces:
+    - class: cdc
+      priority: 1
+      communication:
+        interface_number: auto
+        string: "CDC Communication"
+        subclass: 0x02
+        protocol: 0x01
+        endpoints:
+          - type: interrupt
+            direction: in
+            max_packet_size: 64
+            interval: 16
+            buffer_size: 64
+        functional_descriptors:
+          - type: header
+            bcd_cdc: "1.10"
+          - type: call_management
+            capabilities: 0x00
+            data_interface: auto
+          - type: acm
+            capabilities: 0x02
+          - type: union
+            master_interface: auto
+            slave_interface: auto
+      data:
+        interface_number: auto
+        string: "CDC Data"
+        subclass: 0x00
+        protocol: 0x00
+        endpoints:
+          - type: bulk
+            direction: out
+            max_packet_size: 64
+            interval: 0
+            buffer_size: 64
+          - type: bulk
+            direction: in
+            max_packet_size: 64
+            interval: 0
+            buffer_size: 64
+    - class: custom
+      priority: 2
+      interface_number: auto
+      string: "CMSIS-DAP v2"
+      class_code: 0xFF
+      subclass_code: 0x00
+      protocol_code: 0x00
+      endpoints:
+        - type: bulk
+          direction: out
+          max_packet_size: 64
+          interval: 0
+          buffer_size: 64
+        - type: bulk
+          direction: in
+          max_packet_size: 64
+          interval: 0
+          buffer_size: 64
+      ms_os:
+        compatible_id: "WINUSB"
+        sub_compatible_id: ""
+        guid: "{CDB3B5AD-293B-4663-AA36-1AAE46463776}"
+strings:
+  languages: ["0x0409"]
