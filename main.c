@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include "NUC100Series.h"
+#include "get_serial.h"
 #include "DAP.h"
 #include "tx_api.h"
 
@@ -110,6 +111,7 @@ int main(void) {
     SYS_UnlockReg();
     SYS_Init();
     UART0_Init();
+    usb_serial_init();
     tx_kernel_enter();
 
     return 0;
