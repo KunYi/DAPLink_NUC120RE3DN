@@ -114,8 +114,6 @@ void usb_thread(ULONG thread_input)
 
     do {
         tud_task(); // TODO: check the code, not return?
-        PB4 = 1;
-        PB5 = 0;
         if (tud_ready())
             LED_CONNECTED_OUT(1);
         else
@@ -205,6 +203,12 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
   DAP_ProcessCommand(RxDataBuffer, TxDataBuffer);
 
   tud_hid_report(0, TxDataBuffer, response_size);
+}
+
+// USB interrupt handler to invoke tinyusb
+void USBD_IRQHandler(void)
+{
+  tud_int_handler(0);
 }
 
 __WEAK
