@@ -83,7 +83,7 @@ This information includes:
 /// debugger and depends on the USB peripheral. Typical vales are 64 for Full-speed USB HID or WinUSB,
 /// 1024 for High-speed USB HID and 512 for High-speed USB WinUSB.
 #ifndef HID_ENDPOINT            //HID end points currently set limits to 64
-#define DAP_PACKET_SIZE         512U            ///< Specifies Packet Size in bytes.
+#define DAP_PACKET_SIZE         64U            ///< Specifies Packet Size in bytes.
 #else
 #define DAP_PACKET_SIZE         64U            ///< Specifies Packet Size in bytes.
 #endif
@@ -555,9 +555,9 @@ Status LEDs. In detail the operation of Hardware I/O and LED pins are enabled an
  - LED output pins are enabled and LEDs are turned off.
 */
 __STATIC_INLINE void DAP_SETUP (void) {
-  GPIO_SetMode(LED_ICE_GRP, (1 << LED_ICE_BIT), GPIO_PMD_OUTPUT);
-  GPIO_SetMode(LED_ISP_GRP, (1 << LED_ISP_BIT), GPIO_PMD_OUTPUT);
-  GPIO_SetMode(LED_GRE_GRP, (1 << LED_GRE_BIT), GPIO_PMD_OUTPUT);
+  // GPIO_SetMode(LED_ICE_GRP, (1 << LED_ICE_BIT), GPIO_PMD_OUTPUT);
+  // GPIO_SetMode(LED_ISP_GRP, (1 << LED_ISP_BIT), GPIO_PMD_OUTPUT);
+  // GPIO_SetMode(LED_GRE_GRP, (1 << LED_GRE_BIT), GPIO_PMD_OUTPUT);
   LED_ICE_IO = 0;
   LED_ISP_IO = 1;
   LED_GRE_IO = 1;

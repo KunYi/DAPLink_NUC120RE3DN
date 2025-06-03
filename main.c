@@ -109,8 +109,13 @@ static __INLINE void UART0_Init(void)
 void usb_thread(ULONG thread_input)
 {
     (void)thread_input;
+    uint32_t cnt = 0;
+    bool t = false;
+
     do {
-        tud_task();
+        tud_task(); // TODO: check the code, not return?
+        PB4 = 1;
+        PB5 = 0;
         if (tud_ready())
             LED_CONNECTED_OUT(1);
         else
@@ -119,6 +124,12 @@ void usb_thread(ULONG thread_input)
         // If suspended or disconnected, delay for 1ms (20 ticks)
         if (tud_suspended() || !tud_connected() || !tud_task_event_ready())
             tx_thread_sleep(1);
+
+        cnt++;
+        if (cnt % 10 == 0) {
+            t = !t;
+        }
+        PB6 = (t) ? 1 : 0;
     } while (1);
 }
 
@@ -128,15 +139,27 @@ void    tx_application_define(void *first_unused_memory)
     TX_BYTE_POOL    byte_pool;
     CHAR    *pointer = TX_NULL;
     DAP_Setup();
-
     tx_byte_pool_create(&byte_pool, "byte pool", memory_area, 4 * 1024);
-    tx_byte_allocate(&byte_pool, (VOID **) &pointer, 1024, TX_NO_WAIT);
+    tx_byte_allocate(&byte_pool, (VOID **) &pointer, 2048, TX_NO_WAIT);
     tx_thread_create(&threadUSB, "ThreadUSB", usb_thread, 0,
-        pointer, 1024,
+        pointer, 2048,
         1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+}
 
-    while (1) {
-	}
+static void init_io(void) {
+    // LEDs and Button
+    PB->PMD = (PB->PMD & (~(GPIO_PMD_PMD4_Msk | GPIO_PMD_PMD4_Msk |
+                            GPIO_PMD_PMD6_Msk | GPIO_PMD_PMD7_Msk |
+                            GPIO_PMD_PMD14_Msk))) |
+                         ((GPIO_PMD_OUTPUT << GPIO_PMD_PMD4_Pos) |
+                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD5_Pos) |
+                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD6_Pos) |
+                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD7_Pos) |
+                          (GPIO_PMD_INPUT << GPIO_PMD_PMD14_Pos));
+    PB4 = 1;
+    PB5 = 1; // LED_CONNECTED_OUT
+    PB6 = 1;
+    PB7 = 1; // LED_RUNNING_OUT
 }
 
 int main(void) {
@@ -144,8 +167,14 @@ int main(void) {
     SYS_UnlockReg();
     SYS_Init();
     UART0_Init();
+    init_io();
     usb_serial_init();
-    tusb_init();
+
+    tusb_rhport_init_t dev_init = {
+        .role = TUSB_ROLE_DEVICE,
+        .speed = TUSB_SPEED_AUTO
+    };
+    tusb_init(0, &dev_init);
 
     tx_kernel_enter();
 
