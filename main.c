@@ -109,25 +109,17 @@ static __INLINE void UART0_Init(void)
 void usb_thread(ULONG thread_input)
 {
     (void)thread_input;
-    uint32_t cnt = 0;
-    bool t = false;
 
     do {
-        tud_task(); // TODO: check the code, not return?
-        if (tud_ready())
-            LED_CONNECTED_OUT(1);
+        tud_task();
+        if (!USB_CONNECTED_LED && tud_ready())
+            USB_CONNECTED_LED = 1;
         else
-            LED_CONNECTED_OUT(0);
+            USB_CONNECTED_LED = 0;
 
         // If suspended or disconnected, delay for 1ms (20 ticks)
         if (tud_suspended() || !tud_connected() || !tud_task_event_ready())
             tx_thread_sleep(1);
-
-        cnt++;
-        if (cnt % 10 == 0) {
-            t = !t;
-        }
-        PB6 = (t) ? 1 : 0;
     } while (1);
 }
 
@@ -138,9 +130,9 @@ void    tx_application_define(void *first_unused_memory)
     CHAR    *pointer = TX_NULL;
     DAP_Setup();
     tx_byte_pool_create(&byte_pool, "byte pool", memory_area, 4 * 1024);
-    tx_byte_allocate(&byte_pool, (VOID **) &pointer, 2048, TX_NO_WAIT);
+    tx_byte_allocate(&byte_pool, (VOID **) &pointer, 1024, TX_NO_WAIT);
     tx_thread_create(&threadUSB, "ThreadUSB", usb_thread, 0,
-        pointer, 2048,
+        pointer, 1024,
         1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
 }
 
@@ -204,6 +196,43 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
 
   tud_hid_report(0, TxDataBuffer, response_size);
 }
+
+extern uint8_t const desc_ms_os_20[]; // defined in usb_descriptors.c
+
+#if (BOARD_DEBUG_PROTOCOL == PROTO_DAP_V2)
+bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const * request)
+{
+  // nothing to with DATA & ACK stage
+  if (stage != CONTROL_STAGE_SETUP) return true;
+
+  switch (request->bmRequestType_bit.type)
+  {
+    case TUSB_REQ_TYPE_VENDOR:
+      switch (request->bRequest)
+      {
+        case 1:
+          if ( request->wIndex == 7 )
+          {
+            // Get Microsoft OS 2.0 compatible descriptor
+            uint16_t total_len;
+            memcpy(&total_len, desc_ms_os_20+8, 2);
+
+            return tud_control_xfer(rhport, request, (void*) desc_ms_os_20, total_len);
+          }else
+          {
+            return false;
+          }
+
+        default: break;
+      }
+    break;
+    default: break;
+  }
+
+  // stall unknown request
+  return false;
+}
+#endif
 
 // USB interrupt handler to invoke tinyusb
 void USBD_IRQHandler(void)
