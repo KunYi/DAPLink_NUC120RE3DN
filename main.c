@@ -6,7 +6,6 @@
 #include "DAP.h"
 #include "IO_Config.h"
 #include "tx_api.h"
-#include "tusb.h"
 
 // 48MHz for USB
 #define PLLCON_SETTING  CLK_PLLCON_48MHz_HXT
@@ -107,17 +106,7 @@ static __INLINE void UART0_Init(void)
 void usb_thread(ULONG thread_input)
 {
     (void)thread_input;
-
     do {
-        tud_task();
-        if (!USB_CONNECTED_LED && tud_ready())
-            USB_CONNECTED_LED = 1;
-        else
-            USB_CONNECTED_LED = 0;
-
-        // If suspended or disconnected, delay for 1ms (20 ticks)
-        if (tud_suspended() || !tud_connected() || !tud_task_event_ready())
-            tx_thread_sleep(1);
     } while (1);
 }
 
@@ -158,12 +147,6 @@ int main(void) {
     UART0_Init();
     init_io();
     usb_serial_init();
-
-    tusb_rhport_init_t dev_init = {
-        .role = TUSB_ROLE_DEVICE,
-        .speed = TUSB_SPEED_AUTO
-    };
-    tusb_init(0, &dev_init);
 
     tx_kernel_enter();
 

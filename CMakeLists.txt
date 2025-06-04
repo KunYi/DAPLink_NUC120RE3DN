@@ -23,9 +23,7 @@ set(THREADX_TOOLCHAIN gnu)
 add_subdirectory(threadx)
 set(SRC_FILES
   main.c
-  cdc_uart.c
   get_serial.c
-  usb_helper.c
   usb_descriptors.c
   startup_NUC100Series.S
   tx_initialize_low_level.S
@@ -34,8 +32,6 @@ set(SRC_FILES
 add_executable(${EXECUTABLE} ${SRC_FILES})
 
 target_compile_definitions(${EXECUTABLE} PRIVATE
-  CFG_TUSB_MCU=OPT_MCU_NUC120
-  CFG_TUSB_OS=OPT_OS_THREADX
 )
 
 target_include_directories(${EXECUTABLE} PRIVATE
@@ -48,7 +44,6 @@ target_include_directories(${EXECUTABLE} PRIVATE
 target_link_libraries(${EXECUTABLE}
   nuc120bsp
   daplink
-  tinyusb
   threadx
 )
 
