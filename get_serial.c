@@ -8,7 +8,6 @@
 char usb_serial[UNIQUE_BOARD_ID_SIZE_BYTES * 2 + 1];
 
 static uint32_t UID[3];
-
 /**
  * @brief Convert MCU Unique ID (UID) to USB serial number string.
  *
@@ -32,9 +31,12 @@ static uint32_t UID[3];
 void usb_serial_init(void)
 {
 	uint8_t *pId = (uint8_t *)UID;
+
+	FMC_ENABLE_ISP();
 	UID[0] = FMC_ReadUID(0);
 	UID[1] = FMC_ReadUID(1);
 	UID[2] = FMC_ReadUID(2);
+	FMC_DISABLE_ISP();
 
 	for (int i = 0; i < UNIQUE_BOARD_ID_SIZE_BYTES * 2; i++)
 	{
