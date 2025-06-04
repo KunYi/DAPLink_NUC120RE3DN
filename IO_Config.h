@@ -40,4 +40,6 @@
 #define OFF_BTN_GRP PB
 #define OFF_BTN_BIT 14
 
+
+#define USB_CONNECTED_LED LED_ISP_IO
 #endif
