@@ -140,7 +140,7 @@ __STATIC_INLINE void UART0_Init(void)
 static void usb_thread(ULONG thread_input)
 {
     (void)thread_input;
-
+    Vendor_Init();
     USBD_CustomerStart();
     NVIC_EnableIRQ(USBD_IRQn);
     do {
