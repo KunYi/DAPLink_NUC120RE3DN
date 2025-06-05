@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "${workspaceFolder}/build",
+        "--config",
+        "Debug",
+        "--",
+        "-j12"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "detail": "Task to build the project using CMake"
+    },
+    {
+      "label": "Flash",
+      "type": "shell",
+      "command": "/tmp/openocd-bin/bin/openocd",
+      "args": [
+        "-f",
+        "interface/cmsis-dap.cfg",
+        "-f",
+        "target/numicro.cfg",
+        "-c",
+        "adapter speed 4000",
+        "-c",
+        "program ${workspaceFolder}/build/DAP_NCU120.elf verify reset exit"
+      ],
+      "dependsOn": ["build"],
+      "problemMatcher": [],
+      "detail": "Task to flash the binary to the NUC120 using OpenOCD"
+    }
+  ]
+}

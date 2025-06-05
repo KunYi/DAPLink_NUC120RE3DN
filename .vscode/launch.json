@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Cortex Debug",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceRoot}",
+      "executable": "${workspaceRoot}/build/DAP_NCU120.elf",
+      "device": "NUC12SRE3DE",
+      "interface": "swd",
+      "configFiles": [
+        "interface/cmsis-dap.cfg",
+        "target/numicro.cfg"
+      ],
+      "serverpath": "/tmp/openocd-bin/bin/openocd",
+      "openOCDLaunchCommands": [
+        "adapter speed 4000"
+      ],
+      "armToolchainPath": "/usr/bin",
+      "gdbPath": "gdb-multiarch",
+      "svdFile": "${workspaceRoot}/res/NUC100DN_v1.svd",
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "raw",
+      "rtos": "ThreadX"
+    }
+  ]
+}
