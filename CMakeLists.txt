@@ -25,6 +25,7 @@ set(SRC_FILES
   main.c
   get_serial.c
   usb_descriptors.c
+  usb_vendor.c
   startup_NUC100Series.S
   tx_initialize_low_level.S
 )

@@ -1,22 +1,47 @@
 
 #include <stdint.h>
+#include "tx_api.h"
 #include "NUC100Series.h"
+#include "usbd.h"
+#include "usb_vendor.h"
 #include "get_serial.h"
 #include "DAP_config.h"
 #include "DAP.h"
 #include "IO_Config.h"
-#include "tx_api.h"
+
 
 // 48MHz for USB
 #define PLLCON_SETTING  CLK_PLLCON_48MHz_HXT
 #define PLL_CLOCK	(48000000U)
 
-int main(void);
+#define MEMORY_POOL_SIZE                 (8 * 1024)
+static __ALIGNED(8) uint8_t gu8MemoryPool[MEMORY_POOL_SIZE];
+
+#define THREAD_USB_PRI_NUM  (1)
+#define THREAD_DAP_PRI_NUM  (THREAD_USB_PRI_NUM + 1)
+#define THREAD_UART_PRI_NUM (THREAD_USB_PRI_NUM + 2)
+
+#define THREAD_USB_STACK_SIZE   (1024)
 
 TX_THREAD   threadUSB;
-static uint8_t memory_area[4 * 1024];
 
-static __INLINE void SYS_Init(void)
+__STATIC_INLINE void init_io(void) {
+    // LEDs and Button
+    PB->PMD = (PB->PMD & (~(GPIO_PMD_PMD4_Msk | GPIO_PMD_PMD4_Msk |
+                            GPIO_PMD_PMD6_Msk | GPIO_PMD_PMD7_Msk |
+                            GPIO_PMD_PMD14_Msk))) |
+                         ((GPIO_PMD_OUTPUT << GPIO_PMD_PMD4_Pos) |
+                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD5_Pos) |
+                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD6_Pos) |
+                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD7_Pos) |
+                          (GPIO_PMD_INPUT << GPIO_PMD_PMD14_Pos));
+    PB4 = 1;
+    PB5 = 1; // LED_CONNECTED_OUT
+    PB6 = 1;
+    PB7 = 1; // LED_RUNNING_OUT
+}
+
+__STATIC_INLINE void SYS_Init(void)
 {
     uint32_t u32TimeOutCnt;
 
@@ -84,9 +109,14 @@ static __INLINE void SYS_Init(void)
 
     /* Enable CLKO(PB.12) for monitor HCLK. CLKO = HCLK/8 Hz*/
     // EnableCLKO((2 << CLK_CLKSEL2_FRQDIV_S_Pos), 2);
+
+    init_io();
+
+    NVIC_SetPriority(USBD_IRQn, 0);
+    NVIC_SetPriority(SysTick_IRQn, 1);
 }
 
-static __INLINE void UART0_Init(void)
+__STATIC_INLINE void UART0_Init(void)
 {
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init UART                                                                                               */
@@ -103,9 +133,16 @@ static __INLINE void UART0_Init(void)
     UART0->IER = UART_IER_TOUT_IEN_Msk | UART_IER_RDA_IEN_Msk;
 }
 
-void usb_thread(ULONG thread_input)
+
+
+
+
+static void usb_thread(ULONG thread_input)
 {
     (void)thread_input;
+
+    USBD_CustomerStart();
+    NVIC_EnableIRQ(USBD_IRQn);
     do {
     } while (1);
 }
@@ -117,27 +154,17 @@ void    tx_application_define(void *first_unused_memory)
     CHAR    *pointer = TX_NULL;
 
     DAP_Setup();
-    tx_byte_pool_create(&byte_pool, "byte pool", memory_area, 4 * 1024);
-    tx_byte_allocate(&byte_pool, (VOID **) &pointer, 1024, TX_NO_WAIT);
-    tx_thread_create(&threadUSB, "ThreadUSB", usb_thread, 0,
-        pointer, 1024,
-        1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
-}
-
-static void init_io(void) {
-    // LEDs and Button
-    PB->PMD = (PB->PMD & (~(GPIO_PMD_PMD4_Msk | GPIO_PMD_PMD4_Msk |
-                            GPIO_PMD_PMD6_Msk | GPIO_PMD_PMD7_Msk |
-                            GPIO_PMD_PMD14_Msk))) |
-                         ((GPIO_PMD_OUTPUT << GPIO_PMD_PMD4_Pos) |
-                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD5_Pos) |
-                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD6_Pos) |
-                          (GPIO_PMD_OUTPUT << GPIO_PMD_PMD7_Pos) |
-                          (GPIO_PMD_INPUT << GPIO_PMD_PMD14_Pos));
-    PB4 = 1;
-    PB5 = 1; // LED_CONNECTED_OUT
-    PB6 = 1;
-    PB7 = 1; // LED_RUNNING_OUT
+    tx_byte_pool_create(&byte_pool, "pool", gu8MemoryPool, MEMORY_POOL_SIZE);
+    tx_byte_allocate(&byte_pool, (VOID **) &pointer, THREAD_USB_STACK_SIZE, TX_NO_WAIT);
+    tx_thread_create(&threadUSB, "ThreadUSB",
+        usb_thread,
+        0,
+        pointer,
+        THREAD_USB_STACK_SIZE,
+        THREAD_USB_PRI_NUM,
+        THREAD_USB_PRI_NUM,
+        TX_NO_TIME_SLICE,
+        TX_AUTO_START);
 }
 
 int main(void) {
@@ -145,15 +172,11 @@ int main(void) {
     SYS_UnlockReg();
     SYS_Init();
     UART0_Init();
-    init_io();
-    usb_serial_init();
-
+    USBD_Open(&gsInfo, Vendor_ClassRequest, NULL);
+    usb_serial_init(); // prepare USB Serial
     tx_kernel_enter();
-
     return 0;
 }
-
-
 
 __WEAK
 uint32_t ProcessHardFault(uint32_t lr, uint32_t msp, uint32_t psp)
