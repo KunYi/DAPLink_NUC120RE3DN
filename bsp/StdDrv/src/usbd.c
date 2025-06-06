@@ -292,6 +292,38 @@ void USBD_GetDescriptor(void)
                 break;
             }
         }
+        // Get Binary Object Store Descriptor
+        case DESC_BOS:
+        {
+            if (g_usbd_sInfo->gu8BOSDesc == NULL)
+            {
+                // Not support. Reply STALL.
+                USBD_SET_EP_STALL(EP0);
+                USBD_SET_EP_STALL(EP1);
+                DBG_PRINTF("Unsupported get desc type. stall ctrl pipe\n");
+                break;
+            }
+            else
+            {
+                uint32_t u32TotalLen;
+                u32TotalLen  = g_usbd_sInfo->gu8BOSDesc[2];
+                u32TotalLen += g_usbd_sInfo->gu8BOSDesc[3] << 8;
+
+                if (u32Len > u32TotalLen)
+                {
+                    u32Len = u32TotalLen;
+                    if ((u32Len % g_usbd_CtrlMaxPktSize) == 0)
+                    {
+                        g_usbd_CtrlInZeroFlag = (uint8_t)1; // Need ZLP if length is multiple of max packet size
+                    }
+                }
+
+                USBD_PrepareCtrlIn((uint8_t *)g_usbd_sInfo->gu8BOSDesc, u32Len);
+                USBD_PrepareCtrlOut(0, 0);
+                DBG_PRINTF("Get BOS desc, len=%d\n", u32Len);
+                break;
+            }
+        }
         default:
             // Not support. Reply STALL.
             USBD_SET_EP_STALL(EP0);
@@ -682,6 +714,34 @@ void USBD_LockEpStall(uint32_t u32EpBitmap)
 {
     g_u32EpStallLock = u32EpBitmap;
 }
+
+/**
+ * @brief Get the maximum packet size for USB control endpoint.
+ *
+ * This function returns the maximum packet size configured for the USB control
+ * endpoint, typically used to determine if a Zero Length Packet (ZLP) is required
+ * during control transfers. For USB 2.0 Full-Speed devices like NUC120, this is
+ * usually 64 bytes.
+ *
+ * @return uint32_t The maximum packet size of the control endpoint in bytes.
+ */
+uint32_t USBD_GetCtrlMaxPktSize(void) {
+    return g_usbd_CtrlMaxPktSize;
+}
+
+/**
+ * @brief Set the Zero Length Packet (ZLP) flag for control IN transfers.
+ *
+ * This function sets the flag indicating whether a ZLP is required after a control
+ * IN transfer. The flag is used by the USB driver to send a ZLP when the transfer
+ * length is a multiple of the maximum packet size, as per USB 2.0 specification.
+ *
+ * @param[in] flag Non-zero to indicate a ZLP is needed, 0 otherwise.
+ */
+void USBD_SetCtrlInZeroFlag(uint8_t flag) {
+    g_usbd_CtrlInZeroFlag = flag;
+}
+
 /*@}*/ /* end of group USBD_EXPORTED_FUNCTIONS */
 
 /*@}*/ /* end of group USBD_Driver */

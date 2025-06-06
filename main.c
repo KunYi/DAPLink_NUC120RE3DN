@@ -172,7 +172,8 @@ int main(void) {
     SYS_UnlockReg();
     SYS_Init();
     UART0_Init();
-    USBD_Open(&gsInfo, Vendor_ClassRequest, NULL);
+    USBD_Open(&gsInfo, CDC_ClassRequest, NULL);
+    USBD_SetVendorRequest(Vendor_Request);
     usb_serial_init(); // prepare USB Serial
     tx_kernel_enter();
     return 0;

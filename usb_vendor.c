@@ -4,6 +4,12 @@
 #include "usbd.h"
 #include "usb_vendor.h"
 
+#if 0
+#define DBG_PRINTF      printf
+#else
+#define DBG_PRINTF(...)
+#endif
+
 /*--------------------------------------------------------------------------*/
 STR_VCOM_LINE_CODING gLineCoding = {115200, 0, 0, 8};   /* Baud rate : 115200    */
 /* Stop bit     */
@@ -25,7 +31,7 @@ void EP3_Handler(void);
 void EP4_Handler(void);
 void EP5_Handler(void);
 
-void Vendor_ClassRequest(void)
+void CDC_ClassRequest(void)
 {
     uint8_t buf[8];
 
@@ -100,6 +106,56 @@ void Vendor_ClassRequest(void)
     }
 }
 
+extern uint8_t g_usbd_SetupPacket[];
+extern uint8_t gu8MSOS20_Desc[];
+
+void Vendor_Request(void) {
+    if(g_usbd_SetupPacket[0] & EP_INPUT)    /* request data transfer direction */
+    {
+        // Device to host
+        switch (g_usbd_SetupPacket[1])
+        {
+            case MSOS_VENDOR_CODE:
+            {
+                uint32_t u32Idx;
+                u32Idx = g_usbd_SetupPacket[4];
+                u32Idx += g_usbd_SetupPacket[5] << 8;
+                if (u32Idx == MSOS20_DESCRIPTOR_INDEX) {
+                    uint32_t u32Len;
+                    u32Len = g_usbd_SetupPacket[6];
+                    u32Len += g_usbd_SetupPacket[7] << 8;
+                    uint32_t u32TotalLen;
+                    u32TotalLen = gu8MSOS20_Desc[8];
+                    u32TotalLen += gu8MSOS20_Desc[9] << 8;
+
+                    if (u32Len > u32TotalLen)
+                    {
+                        u32Len = u32TotalLen;
+                        if ((u32Len % USBD_GetCtrlMaxPktSize()) == 0)
+                        {
+                            USBD_SetCtrlInZeroFlag(1); // Need ZLP if length is multiple of max packet size
+                        }
+                    }
+
+                    USBD_PrepareCtrlIn((uint8_t *)gu8MSOS20_Desc, u32Len);
+                    USBD_PrepareCtrlOut(0, 0);
+                    DBG_PRINTF("Get MS_OS20 Desc, len=%d\n", u32Len);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    else
+    {
+        // Host to device
+        // Stall
+        /* Setup error, stall the device */
+        USBD_SetStall(EP0);
+        USBD_SetStall(EP1);
+    }
+}
 
 /*--------------------------------------------------------------------------*/
 void USBD_IRQHandler(void)

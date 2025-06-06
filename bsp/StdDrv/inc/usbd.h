@@ -33,7 +33,7 @@ typedef struct s_usbd_info
     const uint8_t *gu8ConfigDesc;         /*!< Pointer for USB Configuration Descriptor   */
     const uint8_t **gu8StringDesc;        /*!< Pointer for USB String Descriptor pointers */
     const uint8_t *gu8HidReportDesc;      /*!< Pointer for USB HID Report Descriptor      */
-
+    const uint8_t *gu8BOSDesc;            /*!< Pointer for USB Binary Object Descriptor   */
 } S_USBD_INFO_T;
 
 extern const S_USBD_INFO_T gsInfo;
@@ -86,6 +86,39 @@ extern const S_USBD_INFO_T gsInfo;
 #define DESC_ENDPOINT       0x05
 #define DESC_QUALIFIER      0x06
 #define DESC_OTHERSPEED     0x07
+/*!<USB BOS Descriptor Type */
+#define DESC_BOS                    0x0F  // Descriptor type: BOS
+#define DESC_DEVICE_CAPABILITY      0x10  // Descriptor type: Device Capability
+#define CAP_USB20_EXTENSION         0x02  // Capability type: USB 2.0 Extension
+#define CAP_MS_OS_20                0x05  // Capability type: Platform (Microsoft OS 2.0)
+
+/*!< MS OS 20 Platform Capability ID UUID: {D8DD60DF-4589-4CC7-9CD2-659D9E648A9F} */
+#define MSOS20_PLATFORM_CAPABILITY_UUID   0xDF, 0x60, 0xDD, 0xD8, 0x89, 0x45, 0xC7, 0x4C, \
+                                          0x9C, 0xD2, 0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F
+/*!< MS OS 2.0 Descriptor Type */
+#define MSOS20_SET_HEADER_DESCRIPTOR        0x00
+#define MSOS20_SUBSET_HEADER_CONFIGURATION  0x01
+#define MSOS20_SUBSET_HEADER_FUNCTION       0x02
+#define MSOS20_FEATURE_COMPATIBLE_ID        0x03
+#define MSOS20_FEATURE_REG_PROPERTY         0x04
+#define MSOS20_FEATURE_MIN_RESUME_TIME      0x05
+#define MSOS20_FEATURE_MODEL_ID             0x06
+#define MSOS20_FEATURE_CCGP_DEVICE          0x07
+#define MSOS20_FEATURE_VENDOR_REVISION      0x08
+
+/**
+ * @brief Index for Microsoft OS 2.0 Descriptor request.
+ *
+ * Defines the index value (0x07) used in USB Vendor Requests to retrieve the
+ * Microsoft OS 2.0 Descriptor. This index is used in the wIndex field of
+ * the USB Setup Packet to indicate a request for the MSOS 2.0 Descriptor set,
+ * enabling WINUSB support on Windows 8.1 and later.
+ *
+ * @note The value 0x07 corresponds to the standard MS_OS_20_DESCRIPTOR_INDEX
+ *       as defined in the Microsoft OS 2.0 Descriptor specification.
+ */
+#define MSOS20_DESCRIPTOR_INDEX             0x07
+
 
 /*!<USB HID Descriptor Type */
 #define DESC_HID            0x21
@@ -98,6 +131,9 @@ extern const S_USBD_INFO_T gsInfo;
 #define LEN_ENDPOINT        7
 #define LEN_HID             9
 #define LEN_CCID            0x36
+#define LEN_BOS             5     // Length of BOS descriptor header (5 bytes)
+#define LEN_USB20_EXT       0x07  // Length of USB 2.0 Extension descriptor
+#define LEN_MSOS2           28    // Length of Microsoft OS 2.0 descriptor (basic)
 
 /*!<USB Endpoint Type */
 #define EP_ISO              0x01
@@ -655,7 +691,8 @@ void USBD_SwReset(void);
 void USBD_SetVendorRequest(VENDOR_REQ pfnVendorReq);
 void USBD_SetConfigCallback(SET_CONFIG_CB pfnSetConfigCallback);
 void USBD_LockEpStall(uint32_t u32EpBitmap);
-
+uint32_t USBD_GetCtrlMaxPktSize(void);
+void USBD_SetCtrlInZeroFlag(uint8_t flag);
 /*@}*/ /* end of group USBD_EXPORTED_FUNCTIONS */
 
 /*@}*/ /* end of group USBD_Driver */

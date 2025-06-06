@@ -58,7 +58,9 @@
 #define BCD_USB                         (0x0210) // USB 2.1
 #define BCD_DEVICE                      (0x0100) // hardware device version
 
-#define LE16_TO_BYTES(x)  ((uint8_t)((x) & 0xFF)), ((uint8_t)(((x) >> 8) & 0xFF))
+#define LE16_TO_BYTES(x)            ((uint8_t)((x) & 0xFF)), ((uint8_t)(((x) >> 8) & 0xFF))
+#define LE32_TO_BYTES(x)            ((uint8_t)((x) & 0xFF)), ((uint8_t)(((x) >> 8) & 0xFF)), \
+                                    ((uint8_t)(((x) >> 16) & 0xFF)), ((uint8_t)(((x) >> 24) & 0xFF))
 
 /* Define the interrupt In EP number */
 #define CDC_NOTIFICATION_EP_NUM 0x01
@@ -66,6 +68,8 @@
 #define CDC_DATA_IN_EP_NUM      0x03
 #define DAP_OUT_EP_NUM          0x04
 #define DAP_IN_EP_NUM           0x05
+
+#define MSOS_VENDOR_CODE           1
 
 typedef struct
 {
@@ -137,7 +141,8 @@ extern STR_VCOM_LINE_CODING gLineCoding;
 extern uint16_t gCtrlSignal;
 
 // export functions
-extern void Vendor_ClassRequest(void);
+extern void CDC_ClassRequest(void);
+extern void Vendor_Request(void);
 
 void VCOM_LineCoding(uint8_t port);
 #endif

@@ -69,7 +69,7 @@ __ALIGNED(8) const uint8_t gu8ConfigDescriptor[] =
   0x00,                     /* bNumEndpoints          */
   0x02,                     /* bInterfaceClass        */
   0x02,                     /* bInterfaceSubClass     */
-  0x01,                     /* bInterfaceProtocol     */
+  0x00,                     /* bInterfaceProtocol     */
   STRING_CDC_INTERFACE,     /* iInterface             */
 
   /* Communication Class Specified INTERFACE descriptor (Header) */
@@ -218,6 +218,117 @@ __ALIGNED(8) const uint8_t *gpu8UsbString[] =
     gu8StringSerial,
     gu8CDCStringsDesc,
     gu8DAPStringsDesc,
+};
+
+/**
+ * @brief Total length of the BOS Descriptor in bytes.
+ *
+ * Defines the total length of the Binary Object Store (BOS) Descriptor,
+ * including the BOS Header (5 bytes) and Microsoft OS 2.0 Platform Capability
+ * Descriptor (28 bytes). Used for DAP-LINK/WINUSB support.
+ *
+ * @note Update this value if additional Device Capability Descriptors
+ *       (e.g., USB 2.0 Extension) are enabled.
+ */
+#define TOTAL_BOS_LEN   (LEN_BOS + LEN_MSOS2)
+
+/**
+ * @brief Total length of the Microsoft OS 2.0 Descriptor in bytes.
+ *
+ * Defines the total length of the MSOS 2.0 Descriptor (178/0xB2 bytes), which includes
+ * Set Header, Configuration Subset Header, Function Subset Header, Compatible ID,
+ * and Extended Properties for WINUSB support on Windows 8.1 and later.
+ */
+#define MSOS20_DESC_LEN (0xB2)
+
+/**
+ * @brief Windows version for MSOS 2.0 compatibility.
+ *
+ * Specifies the Windows 8.1 version (0x06030000) for MSOS 2.0 and BOS Descriptors.
+ * Used to ensure compatibility with Windows 8.1 and later
+ */
+#define WINDOWS_BLUE    (0x06030000) /*^! Windows 8.1 */
+
+/**
+ * @brief USB Binary Object Store (BOS) Descriptor for DAP-LINK.
+ *
+ * This array defines the BOS Descriptor, which includes the BOS Header and
+ * Microsoft OS 2.0 Platform Capability Descriptor to enable WINUSB driver support
+ * on Windows 8.1 and later.
+ *
+ * @note The USB 2.0 Extension Descriptor is currently disabled (#if 0). Enable it
+ *       if Link Power Management (LPM) is required, and update TOTAL_BOS_LEN and
+ *       bNumDeviceCaps accordingly.
+ * @note The MSOS 2.0 Platform Capability Descriptor references gu8MSOS20_Desc
+ *       for additional WINUSB configuration.
+ */
+__ALIGNED(8) const uint8_t gpu8BOSDescriptor[] =
+{
+    // BOS Descriptor Header
+    LEN_BOS,                       // bLength: 5 bytes
+    DESC_BOS,                      // bDescriptorType:
+    LE16_TO_BYTES(TOTAL_BOS_LEN),  // wTotalLength
+    1,                             // bNumDeviceCaps
+#if 0
+    // USB 2.0 Extension Device Capability Descriptor
+    LEN_USB20_EXT,                 // bLength: 7 bytes
+    DESC_DEVICE_CAPABILITY,        // bDescriptorType: Device Capability
+    CAP_USB20_EXTENSION,           // bDevCapabilityType: USB 2.0 Extension
+    LE32_TO_BYTES(0x00000002),     // bmAttributes: Bit 1 = 1 (LPM supported), others reserved
+#endif
+    // Microsoft OS 2.0 Platform Capability Descriptor (for WINUSB)
+    LEN_MSOS2,                     // bLength: 28 bytes
+    DESC_DEVICE_CAPABILITY,        // bDescriptorType: Device Capability
+    CAP_MS_OS_20,                  // bDevCapabilityType: Platform
+    0x00,                          // bReserved
+    MSOS20_PLATFORM_CAPABILITY_UUID, // PlatformCapabilityUUID: MS OS 20 Platform Capability ID
+    LE32_TO_BYTES(WINDOWS_BLUE),   // dwWindowsVersion: Windows 8.1 (0x06030000) or 0 for generic
+    LE16_TO_BYTES(MSOS20_DESC_LEN),// wMSOSDescriptorSetTotalLength: Length of MS OS 2.0 set
+    MSOS_VENDOR_CODE,              // bMS_VendorCode: Vendor code for MS OS descriptors
+    0x00                           // bAltEnumCode: No alternate enumeration
+};
+
+/**
+ * @brief Microsoft OS 2.0 Descriptor for WINUSB support.
+ *
+ * This array defines the MSOS 2.0 descriptor for DAP-LINK,
+ * including Set Header, Configuration Subset Header, Function Subset
+ * Header, Compatible ID (WINUSB), and Extended Properties (DeviceInterfaceGUIDs)
+ * to enable WINUSB driver loading on Windows 8.1 and later.
+ *
+ * @note Total length is defined by MSOS20_DESC_LEN (178/0xB2 bytes).
+ */
+__ALIGNED(8) const uint8_t gu8MSOS20_Desc[] =
+{
+  // Set header: length, type, windows version, total length
+  LE16_TO_BYTES(0x000A), LE16_TO_BYTES(MSOS20_SET_HEADER_DESCRIPTOR), LE32_TO_BYTES(WINDOWS_BLUE), LE16_TO_BYTES(MSOS20_DESC_LEN),
+
+  // Configuration subset header: length, type, configuration index, reserved, configuration total length
+  LE16_TO_BYTES(0x0008), LE16_TO_BYTES(MSOS20_SUBSET_HEADER_CONFIGURATION), 0, 0, LE16_TO_BYTES(MSOS20_DESC_LEN - 0x0A),
+
+  // Function Subset header: length, type, first interface, reserved, subset length
+  LE16_TO_BYTES(0x0008), LE16_TO_BYTES(MSOS20_SUBSET_HEADER_FUNCTION), 2, 0, LE16_TO_BYTES(MSOS20_DESC_LEN - 0x0A - 0x08),
+
+  // MS OS 2.0 Compatible ID descriptor:  Length: 20 bytes, Type: Compatible ID, sub compatible ID
+  LE16_TO_BYTES(0x0014), LE16_TO_BYTES(MSOS20_FEATURE_COMPATIBLE_ID),
+  'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00,       // Compatible ID: "WINUSB\0\0"
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SubCompatibleID: all zeros
+
+  // Extended Properties Feature Descriptor (for DeviceInterfaceGUID)
+  LE16_TO_BYTES(MSOS20_DESC_LEN - 0x0A - 0x08 - 0x08 - 0x14), LE16_TO_BYTES(MSOS20_FEATURE_REG_PROPERTY), // Length: 142 bytes, Type: Registry Property
+  LE16_TO_BYTES(0x0007), // wPropertyDataType: Multiple NULL-terminated Unicode strings (REG_MULTI_SZ)
+  LE16_TO_BYTES(0x002A), // wPropertyNameLength
+  // PropertyName "DeviceInterfaceGUIDs\0" in UTF-16
+  'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00, 'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00,
+  'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00, 'U', 0x00, 'I', 0x00, 'D', 0x00, 's', 0x00,
+  0x00, 0x00, // Multiple NULL-Terminated
+  LE16_TO_BYTES(0x0050), // wPropertyDataLength
+  // bPropertyData "{CDB3B5AD-293B-4663-AA36-1AAE46463776}" as a UTF-16 string, for CMSIS-DAP  v2 WINUSB
+  '{', 0x00, 'C', 0x00, 'D', 0x00, 'B', 0x00, '3', 0x00, 'B', 0x00, '5', 0x00, 'A', 0x00, 'D', 0x00, '-', 0x00,
+  '2', 0x00, '9', 0x00, '3', 0x00, 'B', 0x00, '-', 0x00, '4', 0x00, '6', 0x00, '6', 0x00, '3', 0x00, '-', 0x00,
+  'A', 0x00, 'A', 0x00, '3', 0x00, '6', 0x00, '-', 0x00, '1', 0x00, 'A', 0x00, 'A', 0x00, 'E', 0x00, '4', 0x00,
+  '6', 0x00, '4', 0x00, '6', 0x00, '3', 0x00, '7', 0x00, '7', 0x00, '6', 0x00, '}', 0x00,
+  0x00, 0x00, 0x00, 0x00
 };
 
 __ALIGNED(8) const S_USBD_INFO_T gsInfo =
