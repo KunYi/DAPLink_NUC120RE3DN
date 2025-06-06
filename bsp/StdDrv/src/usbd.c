@@ -269,7 +269,7 @@ void USBD_GetDescriptor(void)
         case DESC_STRING:
         {
             // Get String Descriptor
-            if(g_usbd_SetupPacket[2] < 4)
+            if(g_usbd_SetupPacket[2] < 6)
             {
                 if(u32Len > g_usbd_sInfo->gu8StringDesc[g_usbd_SetupPacket[2]][0])
                 {

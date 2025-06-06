@@ -14,7 +14,7 @@
 
 /*----------------------------------------------------------------------------*/
 /*!<USB Device Descriptor */
-uint8_t gu8DeviceDescriptor[] =
+__ALIGNED(8) const uint8_t gu8DeviceDescriptor[] =
 {
   LEN_DEVICE,               /* bLength */
   DESC_DEVICE,              /* bDescriptorType */
@@ -40,7 +40,7 @@ uint8_t gu8DeviceDescriptor[] =
 #define LEN_WINUSB_CLASS    (LEN_INTERFACE + (LEN_ENDPOINT * 2))
 #define TOTOAL_LEN          ((uint16_t)LEN_CONFIG + LEN_CDC_CLASS + LEN_WINUSB_CLASS)
 /*!<USB Configure Descriptor */
-uint8_t gu8ConfigDescriptor[] =
+__ALIGNED(8) const uint8_t gu8ConfigDescriptor[] =
 {
   LEN_CONFIG,               /* bLength                */
   DESC_CONFIG,              /* bDescriptorType        */
@@ -155,7 +155,7 @@ uint8_t gu8ConfigDescriptor[] =
 };
 
 /*!<USB Language String Descriptor */
-uint8_t gu8StringLang[] =
+__ALIGNED(8) const uint8_t gu8StringLang[] =
 {
     4,              /* bLength */
     DESC_STRING,    /* bDescriptorType */
@@ -163,7 +163,7 @@ uint8_t gu8StringLang[] =
 };
 
 /*!<USB Vendor String Descriptor */
-uint8_t gu8VendorStringDesc[] =
+__ALIGNED(8) const uint8_t gu8VendorStringDesc[] =
 {
     14,
     DESC_STRING,
@@ -172,7 +172,7 @@ uint8_t gu8VendorStringDesc[] =
 };
 
 /*!<USB Product String Descriptor */
-uint8_t gu8ProductStringDesc[] =
+__ALIGNED(8) const uint8_t gu8ProductStringDesc[] =
 {
     26,             /* bLength          */
     DESC_STRING,    /* bDescriptorType  */
@@ -181,7 +181,7 @@ uint8_t gu8ProductStringDesc[] =
 };
 
 
-const uint8_t gu8StringSerial[] =
+__ALIGNED(8) const uint8_t gu8StringSerial[] =
 {
     26,             // bLength
     DESC_STRING,    // bDescriptorType
@@ -189,7 +189,7 @@ const uint8_t gu8StringSerial[] =
     'A', 0, '0', 0, '2', 0, '0', 0, '2', 0, '5', 0, '0', 0, '6', 0, '0', 0, '4', 0, '0', 0, '4', 0
 };
 
-const uint8_t gu8CDCStringsDesc[] =
+__ALIGNED(8) const uint8_t gu8CDCStringsDesc[] =
 {
     46,             // bLength
     DESC_STRING,    // bDescriptorType
@@ -199,7 +199,7 @@ const uint8_t gu8CDCStringsDesc[] =
     'I', 0, 'n', 0, 't', 0, 'e', 0, 'r', 0, 'f', 0, 'a', 0, 'c', 0, 'e', 0,
 };
 
-const uint8_t gu8DAPStringsDesc[] =
+__ALIGNED(8) const uint8_t gu8DAPStringsDesc[] =
 {
     46,             // bLength
     DESC_STRING,    // bDescriptorType
@@ -210,7 +210,7 @@ const uint8_t gu8DAPStringsDesc[] =
 };
 
 
-const uint8_t *gpu8UsbString[] =
+__ALIGNED(8) const uint8_t *gpu8UsbString[] =
 {
     gu8StringLang,
     gu8VendorStringDesc,
@@ -220,10 +220,11 @@ const uint8_t *gpu8UsbString[] =
     gu8DAPStringsDesc,
 };
 
-const S_USBD_INFO_T gsInfo =
+__ALIGNED(8) const S_USBD_INFO_T gsInfo =
 {
     gu8DeviceDescriptor,
     gu8ConfigDescriptor,
     gpu8UsbString,
-    NULL
+    NULL,
+    gpu8BOSDescriptor,
 };
