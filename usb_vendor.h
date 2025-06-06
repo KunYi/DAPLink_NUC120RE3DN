@@ -52,8 +52,8 @@
 #define STRING_MANUFACTURER             1
 #define STRING_PRODUCT                  2
 #define STRING_SERIAL                   3
-#define STRING_CDC_INTERFACE            4
-#define STRING_WINUSB_INTERFACE         5
+#define STRING_WINUSB_INTERFACE         4
+#define MAX_STRINGS                     5
 
 #define BCD_USB                         (0x0210) // USB 2.1
 #define BCD_DEVICE                      (0x0100) // hardware device version

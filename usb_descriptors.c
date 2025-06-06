@@ -35,10 +35,9 @@ __ALIGNED(8) const uint8_t gu8DeviceDescriptor[] =
 //--------------------------------------------------------------------+
 // Configuration Descriptor
 //--------------------------------------------------------------------+
-#define TOTOAL_INF          ((uint8_t)0x3)
-#define LEN_CDC_CLASS       (LEN_IAD + (5 * 3) + 4 + (LEN_INTERFACE * 2) + (LEN_ENDPOINT * 2))
+#define TOTOAL_INF          ((uint8_t)0x1)
 #define LEN_WINUSB_CLASS    (LEN_INTERFACE + (LEN_ENDPOINT * 2))
-#define TOTOAL_LEN          ((uint16_t)LEN_CONFIG + LEN_CDC_CLASS + LEN_WINUSB_CLASS)
+#define TOTOAL_LEN          ((uint16_t)LEN_CONFIG + LEN_WINUSB_CLASS)
 /*!<USB Configure Descriptor */
 __ALIGNED(8) const uint8_t gu8ConfigDescriptor[] =
 {
@@ -51,82 +50,7 @@ __ALIGNED(8) const uint8_t gu8ConfigDescriptor[] =
   DEVICE_DEFAULT_ATTRIBUTE, /* bmAttributes           */
   DEVICE_MAX_POWER,         /* MaxPower               */
 
-  /* IAD of CDC */
-  LEN_IAD,                  /* bLength                */
-  DESC_IAD,                 /* bDescriptorType        */
-  0x00,                     /* bFirstInterface        */
-  0x02,                     /* bInterfaceCount        */
-  0x02,                     /* bFunctionClass: CDC    */
-  0x02,                     /* bFunctionSubClass: ACM */
-  0x00,                     /* bFunctionProtocol:     */
-  STRING_CDC_INTERFACE,     /* iFunction              */
-
-  /* Interface 0: CDC Control */
-  LEN_INTERFACE,            /* bLength                */
-  DESC_INTERFACE,           /* bDescriptorType        */
-  0x00,                     /* bInterfaceNumber       */
-  0x00,                     /* bAlternateSetting      */
-  0x00,                     /* bNumEndpoints          */
-  0x02,                     /* bInterfaceClass        */
-  0x02,                     /* bInterfaceSubClass     */
-  0x00,                     /* bInterfaceProtocol     */
-  STRING_CDC_INTERFACE,     /* iInterface             */
-
-  /* Communication Class Specified INTERFACE descriptor (Header) */
-  0x05,                     /* Size of the descriptor, in bytes */
-  DESC_CS_INTERFACE,        /* CS_INTERFACE descriptor type */
-  0x00,                     /* Header functional descriptor subtype */
-  LE16_TO_BYTES(0x0110),    /* Communication device compliant to the communication spec. ver. 1.10 */
-
-  /* Communication Class Specified INTERFACE descriptor (Call management) */
-  0x05,                     /* Size of the descriptor, in bytes */
-  DESC_CS_INTERFACE,        /* CS_INTERFACE descriptor type */
-  0x01,                     /* Call management functional descriptor */
-  0x00,                     /* BIT0: Whether device handle call management itself. */
-                            /* BIT1: Whether device can send/receive call management information over a Data Class Interface 0 */
-  0x01,                     /* Interface number of data class interface optionally used for call management */
-
-  /* Communication Class Specified INTERFACE descriptor (ACM) */
-  0x04,                     /* Size of the descriptor, in bytes */
-  DESC_CS_INTERFACE,        /* CS_INTERFACE descriptor type */
-  0x02,                     /* Abstract control management functional descriptor subtype */
-  0x02,                     /* bmCapabilities: SetLineCoding */
-
-  /* Communication Class Specified INTERFACE descriptor (Union) */
-  0x05,                     /* bLength              */
-  DESC_CS_INTERFACE,        /* bDescriptorType: CS_INTERFACE descriptor type */
-  0x06,                     /* bDescriptorSubType   */
-  0x00,                     /* bMasterInterface     */
-  0x01,                     /* bSlaveInterface0     */
-
-  /* Interface 1: CDC Data */
-  LEN_INTERFACE,            /* bLength              */
-  DESC_INTERFACE,           /* bDescriptorType      */
-  0x01,                     /* bInterfaceNumber     */
-  0x00,                     /* bAlternateSetting    */
-  0x02,                     /* bNumEndpoints        */
-  0x0A,                     /* bInterfaceClass      */
-  0x00,                     /* bInterfaceSubClass   */
-  0x00,                     /* bInterfaceProtocol   */
-  STRING_CDC_INTERFACE,     /* iInterface           */
-
-  /* ENDPOINT descriptor (CDC DATA OUT) */
-  LEN_ENDPOINT,                             /* bLength          */
-  DESC_ENDPOINT,                            /* bDescriptorType  */
-  (EP_OUTPUT | CDC_DATA_OUT_EP_NUM),        /* bEndpointAddress */
-  EP_BULK,                                  /* bmAttributes     */
-  LE16_TO_BYTES(EP2_MAX_PKT_SIZE),          /* wMaxPacketSize   */
-  0x00,                                     /* bInterval        */
-
-  /* ENDPOINT descriptor (CDC DATA IN) */
-  LEN_ENDPOINT,                             /* bLength          */
-  DESC_ENDPOINT,                            /* bDescriptorType  */
-  (EP_INPUT | CDC_DATA_IN_EP_NUM),          /* bEndpointAddress */
-  EP_BULK,                                  /* bmAttributes     */
-  LE16_TO_BYTES(EP3_MAX_PKT_SIZE),          /* wMaxPacketSize   */
-  0x00,                                     /* bInterval        */
-
-  /* Interface 2: Vendor-Specific: (DAP V2: WINUSB) */
+  /* Interface 1: Vendor-Specific: (DAP V2: WINUSB) */
   LEN_INTERFACE,            /* bLength              */
   DESC_INTERFACE,           /* bDescriptorType      */
   0x02,                     /* bInterfaceNumber     */
@@ -142,7 +66,7 @@ __ALIGNED(8) const uint8_t gu8ConfigDescriptor[] =
   DESC_ENDPOINT,                            /* bDescriptorType  */
   (EP_OUTPUT | DAP_OUT_EP_NUM),             /* bEndpointAddress */
   EP_BULK,                                  /* bmAttributes     */
-  LE16_TO_BYTES(EP3_MAX_PKT_SIZE),          /* wMaxPacketSize   */
+  LE16_TO_BYTES(EP4_MAX_PKT_SIZE),          /* wMaxPacketSize   */
   0x00,                                     /* bInterval        */
 
   /* ENDPOINT descriptor (DAP IN) */
@@ -150,7 +74,7 @@ __ALIGNED(8) const uint8_t gu8ConfigDescriptor[] =
   DESC_ENDPOINT,                            /* bDescriptorType  */
   (EP_INPUT | DAP_IN_EP_NUM),               /* bEndpointAddress */
   EP_BULK,                                  /* bmAttributes     */
-  LE16_TO_BYTES(EP3_MAX_PKT_SIZE),          /* wMaxPacketSize   */
+  LE16_TO_BYTES(EP5_MAX_PKT_SIZE),          /* wMaxPacketSize   */
   0x00,                                     /* bInterval        */
 };
 
@@ -189,16 +113,6 @@ __ALIGNED(8) const uint8_t gu8StringSerial[] =
     'A', 0, '0', 0, '2', 0, '0', 0, '2', 0, '5', 0, '0', 0, '6', 0, '0', 0, '4', 0, '0', 0, '4', 0
 };
 
-__ALIGNED(8) const uint8_t gu8CDCStringsDesc[] =
-{
-    46,             // bLength
-    DESC_STRING,    // bDescriptorType
-    // String: "CDC-ACM UART Interface"
-    'C', 0, 'D', 0, 'C', 0, '-', 0, 'A', 0, 'C', 0, 'M', 0, ' ', 0,
-    'U', 0, 'A', 0, 'R', 0, 'T', 0, ' ', 0,
-    'I', 0, 'n', 0, 't', 0, 'e', 0, 'r', 0, 'f', 0, 'a', 0, 'c', 0, 'e', 0,
-};
-
 __ALIGNED(8) const uint8_t gu8DAPStringsDesc[] =
 {
     46,             // bLength
@@ -216,7 +130,6 @@ __ALIGNED(8) const uint8_t *gpu8UsbString[] =
     gu8VendorStringDesc,
     gu8ProductStringDesc,
     gu8StringSerial,
-    gu8CDCStringsDesc,
     gu8DAPStringsDesc,
 };
 
