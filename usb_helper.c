@@ -4,35 +4,6 @@
 #include "DAP.h"
 #include "tusb.h"
 
-static uint8_t TxDataBuffer[CFG_TUD_HID_EP_BUFSIZE];
-static uint8_t RxDataBuffer[CFG_TUD_HID_EP_BUFSIZE];
-
-uint16_t tud_hid_get_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen)
-{
-  // TODO: not Implemented
-  (void) itf;
-  (void) report_id;
-  (void) report_type;
-  (void) buffer;
-  (void) reqlen;
-
-  return 0;
-}
-
-void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t report_type, uint8_t const* RxDataBuffer, uint16_t bufsize)
-{
-  uint32_t response_size = TU_MIN(CFG_TUD_HID_EP_BUFSIZE, bufsize);
-
-  // This doesn't use multiple report and report ID
-  (void) itf;
-  (void) report_id;
-  (void) report_type;
-
-  DAP_ProcessCommand(RxDataBuffer, TxDataBuffer);
-
-  tud_hid_report(0, TxDataBuffer, response_size);
-}
-
 extern uint8_t const desc_ms_os_20[]; // defined in usb_descriptors.c
 
 #if (BOARD_DEBUG_PROTOCOL == PROTO_DAP_V2)

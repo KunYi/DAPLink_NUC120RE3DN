@@ -36,11 +36,7 @@ tusb_desc_device_t const desc_device =
 {
     .bLength            = sizeof(tusb_desc_device_t),
     .bDescriptorType    = TUSB_DESC_DEVICE,
-#if (BOARD_DEBUG_PROTOCOL == PROTO_DAP_V2)
     .bcdUSB             = 0x0210, // USB Specification version 2.1 for BOS
-#else
-    .bcdUSB             = 0x0110,
-#endif
     .bDeviceClass       = 0x00, // Each interface specifies its own
     .bDeviceSubClass    = 0x00, // Each interface specifies its own
     .bDeviceProtocol    = 0x00,
@@ -48,7 +44,7 @@ tusb_desc_device_t const desc_device =
 
     .idVendor           = 0x2E8A, // Pi
     .idProduct          = 0x000c, // CMSIS-DAP Debug Probe
-    .bcdDevice          = 0x0222, // Version 02.22
+    .bcdDevice          = 0x0100, // 1.0
     .iManufacturer      = 0x01,
     .iProduct           = 0x02,
     .iSerialNumber      = 0x03,
@@ -68,51 +64,20 @@ uint8_t const * tud_descriptor_device_cb(void)
 
 enum
 {
-  ITF_NUM_PROBE, // Old versions of Keil MDK only look at interface 0
-  ITF_NUM_CDC_COM,
-  ITF_NUM_CDC_DATA,
+  ITF_NUM_DAPLINK,
   ITF_NUM_TOTAL
 };
+#define DAP_OUT_EP_NUM 0x01
+#define DAP_IN_EP_NUM 0x81
 
-#define CDC_NOTIFICATION_EP_NUM 0x81
-#define CDC_DATA_OUT_EP_NUM 0x02
-#define CDC_DATA_IN_EP_NUM 0x83
-#define DAP_OUT_EP_NUM 0x04
-#define DAP_IN_EP_NUM 0x85
-
-#if (BOARD_DEBUG_PROTOCOL == PROTO_DAP_V1)
-#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
-#else
-#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_VENDOR_DESC_LEN)
-#endif
-
-static uint8_t const desc_hid_report[] =
-{
-  TUD_HID_REPORT_DESC_GENERIC_INOUT(CFG_TUD_HID_EP_BUFSIZE)
-};
-
-uint8_t const * tud_hid_descriptor_report_cb(uint8_t itf)
-{
-  (void) itf;
-  return desc_hid_report;
-}
+#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_VENDOR_DESC_LEN)
 
 uint8_t desc_configuration[] =
 {
   TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0, 100),
   // Interface 0
-#if (BOARD_DEBUG_PROTOCOL == PROTO_DAP_V1)
-  // HID (named interface)
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_PROBE, 4, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), DAP_OUT_EP_NUM, DAP_IN_EP_NUM, CFG_TUD_HID_EP_BUFSIZE, 1),
-#elif (BOARD_DEBUG_PROTOCOL == PROTO_DAP_V2)
   // Bulk (named interface)
-  TUD_VENDOR_DESCRIPTOR(ITF_NUM_PROBE, 5, DAP_OUT_EP_NUM, DAP_IN_EP_NUM, 64),
-#elif (BOARD_DEBUG_PROTOCOL == PROTO_OPENOCD_CUSTOM)
-  // Bulk
-  TUD_VENDOR_DESCRIPTOR(ITF_NUM_PROBE, 0, DAP_OUT_EP_NUM, DAP_IN_EP_NUM, 64),
-#endif
-  // Interface 1 + 2
-  TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_COM, 6, CDC_NOTIFICATION_EP_NUM, 64, CDC_DATA_OUT_EP_NUM, CDC_DATA_IN_EP_NUM, 64),
+  TUD_VENDOR_DESCRIPTOR(ITF_NUM_DAPLINK, 4, DAP_OUT_EP_NUM, DAP_IN_EP_NUM, 64),
 };
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -121,10 +86,9 @@ uint8_t desc_configuration[] =
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
-  /* Hack in CAP_BREAK support */
-  desc_configuration[CONFIG_TOTAL_LEN - TUD_CDC_DESC_LEN + 8 + 9 + 5 + 5 + 4 - 1] = 0x6;
   return desc_configuration;
 }
+
 
 //--------------------------------------------------------------------+
 // String Descriptors
@@ -137,9 +101,7 @@ char const* string_desc_arr [] =
   USB_VENDOR_STRING,              // 1: Manufacturer
   USB_PRODUCT_STRING,             // 2: Product
   usb_serial,                     // 3: Serial, uses flash unique ID
-  "CMSIS-DAP v1 Interface",       // 4: Interface descriptor for HID transport
-  "CMSIS-DAP v2 Interface",       // 5: Interface descriptor for Bulk transport
-  "CDC-ACM UART Interface",       // 6: Interface descriptor for CDC
+  "CMSIS-DAP v2 Interface",       // 4: Interface descriptor for Bulk transport
 };
 
 static uint16_t _desc_str[32];
@@ -220,7 +182,7 @@ uint8_t const desc_ms_os_20[] =
   U16_TO_U8S_LE(0x0008), U16_TO_U8S_LE(MS_OS_20_SUBSET_HEADER_CONFIGURATION), 0, 0, U16_TO_U8S_LE(MS_OS_20_DESC_LEN-0x0A),
 
   // Function Subset header: length, type, first interface, reserved, subset length
-  U16_TO_U8S_LE(0x0008), U16_TO_U8S_LE(MS_OS_20_SUBSET_HEADER_FUNCTION), ITF_NUM_PROBE, 0, U16_TO_U8S_LE(MS_OS_20_DESC_LEN-0x0A-0x08),
+  U16_TO_U8S_LE(0x0008), U16_TO_U8S_LE(MS_OS_20_SUBSET_HEADER_FUNCTION), ITF_NUM_DAPLINK, 0, U16_TO_U8S_LE(MS_OS_20_DESC_LEN-0x0A-0x08),
 
   // MS OS 2.0 Compatible ID descriptor: length, type, compatible ID, sub compatible ID
   U16_TO_U8S_LE(0x0014), U16_TO_U8S_LE(MS_OS_20_FEATURE_COMPATBLE_ID), 'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00,

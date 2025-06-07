@@ -23,7 +23,6 @@ set(THREADX_TOOLCHAIN gnu)
 add_subdirectory(threadx)
 set(SRC_FILES
   main.c
-  cdc_uart.c
   get_serial.c
   usb_helper.c
   usb_descriptors.c
