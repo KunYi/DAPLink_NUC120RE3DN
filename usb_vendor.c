@@ -3,6 +3,7 @@
 #include "NUC100Series.h"
 #include "usbd.h"
 #include "usb_vendor.h"
+#include "usb_fifo.h"
 
 #if 0
 #define DBG_PRINTF      printf
@@ -285,14 +286,14 @@ void USBD_IRQHandler(void)
         {
             /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP4);
-	    EP4_Handler();
+            EP4_Handler(); // Bulk Out
         }
 
         if(u32IntSts & USBD_INTSTS_EP5)
         {
             /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP5);
-	    EP5_Handler();
+            EP5_Handler(); // Bulk In
         }
     }
 }
@@ -322,7 +323,10 @@ void EP3_Handler(void)
 
 void EP4_Handler(void)
 {
+    uint32_t len = USBD_GET_PAYLOAD_LEN(EP4);
+    uint8_t* pBuf = (uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP4));
 
+    usb_fifo_write(pBuf, len);
 }
 
 

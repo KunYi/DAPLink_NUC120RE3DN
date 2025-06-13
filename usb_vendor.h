@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __USB_VENDOR_H__
 #define __USB_VENDOR_H__
 

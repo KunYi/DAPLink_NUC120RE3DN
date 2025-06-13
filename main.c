@@ -8,11 +8,7 @@
 #include "DAP_config.h"
 #include "DAP.h"
 #include "IO_Config.h"
-
-
-// 48MHz for USB
-#define PLLCON_SETTING  CLK_PLLCON_48MHz_HXT
-#define PLL_CLOCK	(48000000U)
+#include "main.h"
 
 #define MEMORY_POOL_SIZE                 (8 * 1024)
 static __ALIGNED(8) uint8_t gu8MemoryPool[MEMORY_POOL_SIZE];
@@ -112,8 +108,8 @@ __STATIC_INLINE void SYS_Init(void)
 
     init_io();
 
-    NVIC_SetPriority(USBD_IRQn, 0);
-    NVIC_SetPriority(SysTick_IRQn, 1);
+    NVIC_SetPriority(USBD_IRQn, INTERRUPT_PRIORITY_USB);
+    NVIC_SetPriority(SysTick_IRQn, INTERRUPT_PRIORITY_SYSTICK);
 }
 
 __STATIC_INLINE void UART0_Init(void)
@@ -133,16 +129,12 @@ __STATIC_INLINE void UART0_Init(void)
     UART0->IER = UART_IER_TOUT_IEN_Msk | UART_IER_RDA_IEN_Msk;
 }
 
-
-
-
-
 static void usb_thread(ULONG thread_input)
 {
     (void)thread_input;
     Vendor_Init();
     USBD_CustomerStart();
-    NVIC_EnableIRQ(USBD_IRQn);
+    USB_EN_INTR();
     do {
     } while (1);
 }
